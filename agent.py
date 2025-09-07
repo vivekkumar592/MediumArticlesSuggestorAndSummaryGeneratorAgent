@@ -28,6 +28,8 @@ print(f"rapid key is {rapid_key}")
 
 class State(TypedDict):
   messages:Annotated[list, add_messages]
+  articlesDetails:Annotated[list, add_messages]
+  articlesContents:Annotated[list, add_messages]
 
 async def fetch(session, url):
     async with session.get(url) as response:
@@ -35,30 +37,33 @@ async def fetch(session, url):
 
 async def recommended_articles_searching_Node(state : State):
   '''This node generates the recommended articles'''
-  print("Messages length entering tool node:")
   
+
   query = quote(state["messages"][-1].content)
   headers = {
     'x-rapidapi-key': rapid_key,
     'x-rapidapi-host': "medium2.p.rapidapi.com"
     }
   url = f"https://medium2.p.rapidapi.com/search/articles?query={query}&count=3"
-  print(f"url is {url}")
+  
   async with aiohttp.ClientSession(headers=headers) as session:
     res = await fetch(session, url)
-  print(f"res is {res}")
+  
   data = res
   print(data)
   connections =[];
   articles_id = data["articles"][:10];
   urls = [f"https://medium2.p.rapidapi.com/article/{article_id}" for article_id in articles_id]
-  print(f"urls are {urls}")
+  
+  result = [];
   async with aiohttp.ClientSession(headers=headers) as session:
       tasks = [fetch(session, url) for url in urls]
       results = await asyncio.gather(*tasks, return_exceptions=True)
-      print(f"results ",results)
-      llm_message = AIMessage (content=str(results))
-      state["messages"].append(llm_message)
+      
+      result.append(results)
+  
+  llm_message = AIMessage (content=str(result))
+  state["articlesDetails"].append(llm_message)
   return state
 
 
@@ -80,7 +85,7 @@ graph_builder = StateGraph(State)
 
 #   formatted_prompt = prompt.invoke({"message": state["messages"][-1].content})
 #   print(f"formatted prompt {formatted_prompt}")
-#   llm = ChatOpenAI(model="gpt-4.1").bind_tools([recommended_articles_searching_tool]) 
+#   llm = ChatOpenAI(model="gpt-4.1").bind_tools([recommended_articles_searching_tool])
 #   llm_response = llm.invoke(formatted_prompt)
 #   llm_message = AIMessage (content=llm_response.content)
 #   state["messages"].append(llm_message)
@@ -88,6 +93,42 @@ graph_builder = StateGraph(State)
 #   print("In first node, LLM output:", llm_response.content)
 #   return state  # RETURN the updated st
 
+def article_recommender_node(state : State):
+  ''' In this node the llm takes the articles details and try to find the 3 most suitable articles to show to the user from articleDetails.'''
+
+  user_message = state["messages"][-1].content if state["messages"] else ""
+  system_template = '''You are a precise article recommender
+                    Your sole task is to select exactly 3 articles from the provided articleDetails array that best match the user's query based on relevance to title, subtitle, topics, tags, and other metadata.
+                    Do not summarize, explain, or add any text beyond the output format."
+
+                    Input:
+
+                    User query: {query}
+
+                    articleDetails: {articlesDetails}
+
+                    Output ONLY in this exact format as a JSON array, nothing else—no introductions, no explanations, no summaries, no additional fields, no markdown, no questions:
+                    
+                    example_id,another_id,third_id
+                    
+
+                    Return exact 3. Extract 'id'  without changes. Strictly adhere to this;"
+                    any deviation means failure.'''
+  user_template = f"{user_message}"
+  prompt = ChatPromptTemplate.from_messages([
+    ("system", system_template),
+    ("user", user_template)
+  ])
+
+  formatted_prompt = prompt.invoke({"query" : state["messages"][1].content, "articlesDetails":state["articlesDetails"]})
+  
+  llm = ChatOpenAI(model="gpt-4.1")
+  llm_response = llm.invoke(formatted_prompt)
+  llm_message = HumanMessage (content=llm_response.content)
+  state["messages"].append(llm_message)
+
+  print("In third node, LLM output:")
+  return state  # RETURN the updated st
 
 def user_Input_understander_llm_node(state: State):
   ''' In this node the llm takes the input from the user and analyse the topic or main crux to search in medium for this input'''
@@ -101,15 +142,70 @@ def user_Input_understander_llm_node(state: State):
   ])
 
   formatted_prompt = prompt.invoke({"message": state["messages"][-1].content})
-  print(f"formatted prompt {formatted_prompt}")
+  
   llm = ChatOpenAI(model="gpt-4.1")
   llm_response = llm.invoke(formatted_prompt)
   llm_message = AIMessage (content=llm_response.content)
   state["messages"].append(llm_message)
 
-  print("In first node, LLM output:", llm_response.content)
+  
   return state  # RETURN the updated st
 
+
+async def medium_article_api_node(state: State):
+  ''' In this node the api is called for contents of the articles that is recommended for the user.'''
+  articles_id = state["messages"][-1].content.split(",")
+  headers = {
+    'x-rapidapi-key': rapid_key,
+    'x-rapidapi-host': "medium2.p.rapidapi.com"
+    }
+  urls = [f"https://medium2.p.rapidapi.com/article/{article_id}/content" for article_id in articles_id]
+  
+  result = [];
+  async with aiohttp.ClientSession(headers=headers) as session:
+      tasks = [fetch(session, url) for url in urls]
+      results = await asyncio.gather(*tasks, return_exceptions=True)
+      
+      for res in results:
+        result.append(res["content"])
+  
+  
+  article_content = HumanMessage (content=str(result))
+  state["articlesContents"].append(article_content)
+  return state
+
+def llm_node_to_summarize_articles_content_Node(state: State):
+  ''' In this node the llm takes the articles content and return the proper summary along witht the main points of the articles.'''
+
+  user_message = state["messages"][-1].content if state["messages"] else ""
+  system_template = '''You are a precise summarization expert. Your task is to take a list of article contents provided as input (e.g., [article1content, article2content, ...]) and generate a concise summary for each one.
+                       Each summary should  capture the main ideas, key points, and conclusions without adding external information or opinions. 
+                       Maintain objectivity and structure each summary with a brief introduction, body highlights, and conclusion.
+
+                      Input format:
+
+                      articles: {articlesContents}
+
+                      Output strictly as a JSON array of strings, where each element is the summary of the corresponding input article, in the same order. No additional text, explanations, or keys—just the array:
+                      ["summary1", "summary2", ...]
+
+                      If the list has fewer or more items, match the output list length accordingly. If an article is empty or invalid, output "No content to summarize" for that entry.
+                      In the starting add that how many articles you summarized in this.'''
+  user_template = f"{user_message}"
+  prompt = ChatPromptTemplate.from_messages([
+    ("system", system_template),
+    ("user", user_template)
+  ])
+
+  formatted_prompt = prompt.invoke({ "articlesContents":state["articlesContents"]})
+  
+  llm = ChatOpenAI(model="gpt-4.1")
+  llm_response = llm.invoke(formatted_prompt)
+  llm_message = HumanMessage (content=llm_response.content)
+  state["messages"].append(llm_message)
+
+  print("In summarizer node, LLM output:")
+  return state  # RETURN the updated st
 
 graph_builder.add_node("user_Input_understander_llm_node",user_Input_understander_llm_node)
 graph_builder.add_node("recommended_articles_searching_Node", recommended_articles_searching_Node)
@@ -118,7 +214,13 @@ graph_builder.add_edge(START,"user_Input_understander_llm_node")
 # graph_builder.add_conditional_edges("agent", tools_condition)
 graph_builder.add_edge("user_Input_understander_llm_node","recommended_articles_searching_Node")
 # graph_builder.add_edge("agent","tools")
-graph_builder.add_edge("recommended_articles_searching_Node",END)
+graph_builder.add_edge("recommended_articles_searching_Node","article_recommender_node")
+graph_builder.add_node("article_recommender_node",article_recommender_node)
+graph_builder.add_edge("article_recommender_node","medium_article_api_node")
+graph_builder.add_node("medium_article_api_node",medium_article_api_node)
+graph_builder.add_edge("medium_article_api_node","llm_node_to_summarize_articles_content_Node")
+graph_builder.add_node("llm_node_to_summarize_articles_content_Node",llm_node_to_summarize_articles_content_Node)
+graph_builder.add_edge("llm_node_to_summarize_articles_content_Node", END)
 
 graph = graph_builder.compile()
 
@@ -131,9 +233,8 @@ async def main():
   user_input = input("What's in your mind :")
 
   async for event in graph.astream({"messages": [HumanMessage(content=user_input)]}):
-    print(event)
     for value in event.values():
-        print("Output state messages:", value["messages"])
+        print("Output state messages:", value["messages"][-1].content)
 
 await main()
 
