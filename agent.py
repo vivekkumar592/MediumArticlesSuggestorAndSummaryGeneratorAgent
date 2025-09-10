@@ -4,7 +4,7 @@ import os
 from langgraph.graph.message import add_messages
 import http.client
 from urllib.parse import quote
-# from google.colab import userdata
+#from google.colab import userdata
 import asyncio
 import aiohttp
 import os
@@ -14,9 +14,9 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.prebuilt import ToolNode, tools_condition,InjectedState
 from langchain_core.messages import HumanMessage, AIMessage
-# import nest_asyncio
 
-# nest_asyncio.apply()
+
+
 api_key=os.environ.get("OPENAI_API_KEY")
 rapid_key = os.environ.get("RAPIDAPI_KEY")
 
@@ -227,12 +227,14 @@ graph = graph_builder.compile()
 #         for value in event.values():
 #             print("Assistant:", value["messages"][-1].content)
 
-async def main():
-  user_input = input("What's in your mind :")
-
+async def agent(user_input):
+  value = ""
   async for event in graph.astream({"messages": [HumanMessage(content=user_input)]}):
     for value in event.values():
         print("Output state messages:", value["messages"][-1].content)
-main()
+        value = value["messages"][-1].content
+  return value
 
-  # stream_graph_updates(user_input)
+
+
+
