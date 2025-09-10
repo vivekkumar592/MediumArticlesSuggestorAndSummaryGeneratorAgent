@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+langchain==0.0.230
+langgraph
+langchain_openai
+typing_extensions
+aiohttp
+nest_asyncio
+google-colab
