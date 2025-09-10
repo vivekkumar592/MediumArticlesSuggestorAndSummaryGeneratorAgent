@@ -14,9 +14,9 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.prebuilt import ToolNode, tools_condition,InjectedState
 from langchain_core.messages import HumanMessage, AIMessage
-import nest_asyncio
+# import nest_asyncio
 
-nest_asyncio.apply()
+# nest_asyncio.apply()
 api_key=os.environ.get["OPENAI_API_KEY"]
 rapid_key = os.environ.get("RAPIDAPI_KEY")
 
