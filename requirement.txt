@@ -6,4 +6,3 @@ langchain_openai
 typing_extensions
 aiohttp
 nest_asyncio
-google-colab
