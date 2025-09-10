@@ -4,7 +4,7 @@ import os
 from langgraph.graph.message import add_messages
 import http.client
 from urllib.parse import quote
-from google.colab import userdata
+# from google.colab import userdata
 import asyncio
 import aiohttp
 import os
@@ -17,14 +17,12 @@ from langchain_core.messages import HumanMessage, AIMessage
 import nest_asyncio
 
 nest_asyncio.apply()
-api_key=userdata.get("OPENAI_API_KEY")
-rapid_key = userdata.get("RAPIDAPI_KEY")
+api_key=os.environ.get["OPENAI_API_KEY"]
+rapid_key = os.environ.get("RAPIDAPI_KEY")
 
 os.environ["OPENAI_API_KEY"] = api_key
 os.environ["RAPIDAPI_KEY"] = rapid_key
 
-print(f"api key is {api_key}")
-print(f"rapid key is {rapid_key}")
 
 class State(TypedDict):
   messages:Annotated[list, add_messages]
