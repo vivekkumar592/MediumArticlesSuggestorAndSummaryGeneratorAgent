@@ -235,7 +235,6 @@ async def main():
   async for event in graph.astream({"messages": [HumanMessage(content=user_input)]}):
     for value in event.values():
         print("Output state messages:", value["messages"][-1].content)
-
-await main()
+ main()
 
   # stream_graph_updates(user_input)
