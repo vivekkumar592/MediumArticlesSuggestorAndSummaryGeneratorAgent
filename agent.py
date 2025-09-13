@@ -176,7 +176,7 @@ def llm_node_to_summarize_articles_content_Node(state: State):
   ''' In this node the llm takes the articles content and return the proper summary along witht the main points of the articles.'''
 
   user_message = state["messages"][-1].content if state["messages"] else ""
-  system_template = '''You are a precise summarization expert. Your task is to take a list of article contents provided as input (e.g., [{article1content}, {article2content}, ...]) and generate a structured summary for each article.
+  system_template = '''You are a precise summarization expert. Your task is to take a list of article contents provided as input (e.g., [{{article1content}}, {{article2content}}, ...]) and generate a structured summary for each article.
 
       Each summary must capture the main ideas, key points, and conclusions without adding external information or opinions. Keep technical accuracy intact, maintain objectivity, and provide the summary in the following JSON object format:
       
