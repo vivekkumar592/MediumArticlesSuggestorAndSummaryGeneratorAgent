@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medium Article Recommender & Summarizer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Animated background elements -->
+    <div class="background-animation">
+        <div class="floating-shape cube"></div>
+        <div class="floating-shape sphere"></div>
+        <div class="floating-shape pyramid"></div>
+        <div class="floating-shape cube-small"></div>
+        <div class="floating-shape sphere-small"></div>
+        <div class="particles">
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Header Section -->
+        <header class="header">
+            <h1 class="main-title">
+                <span class="title-line">Medium Article</span>
+                <span class="title-line">Recommender & Summarizer</span>
+            </h1>
+            <p class="subtitle">
+                Discover and summarize the best Medium articles on any topic with AI-powered recommendations
+            </p>
+        </header>
+
+        <!-- Input Section -->
+        <section class="input-section">
+            <div class="input-container glass-card">
+                <div class="input-wrapper">
+                    <input 
+                        type="text" 
+                        id="topicInput" 
+                        placeholder="What topic do you want to learn about?"
+                        class="topic-input"
+                    />
+                    <button id="findButton" class="find-btn">
+                        <span class="btn-text">Find Articles</span>
+                        <div class="btn-loader hidden">
+                            <div class="spinner-3d"></div>
+                        </div>
+                    </button>
+                </div>
+                <div class="input-error hidden" id="errorMessage"></div>
+            </div>
+        </section>
+
+        <!-- Loading Section -->
+        <section class="loading-section hidden" id="loadingSection">
+            <div class="loading-container">
+                <div class="loading-spinner-3d">
+                    <div class="spinner-cube"></div>
+                    <div class="spinner-cube"></div>
+                    <div class="spinner-cube"></div>
+                    <div class="spinner-cube"></div>
+                </div>
+                <p class="loading-text">Finding the best articles for you...</p>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section hidden" id="resultsSection">
+            <h2 class="results-title">Article Summaries</h2>
+            <div class="results-grid" id="resultsGrid">
+                <!-- Results will be dynamically inserted here -->
+            </div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
