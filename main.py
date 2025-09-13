@@ -6,6 +6,9 @@ import logging
 logger = logging.getLogger("uvicorn.error")
   # stream_graph_updates(user_input)
 
+@app.get("/")
+async def read_initial():
+    return {"agent_content": "Hello User"}
 @app.get("/recommend/{user_input}")
 async def read_user_input(user_input: str):
     agent_content = await agent(user_input)
