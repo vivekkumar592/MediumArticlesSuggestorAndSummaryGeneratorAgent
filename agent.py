@@ -14,7 +14,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.prebuilt import ToolNode, tools_condition,InjectedState
 from langchain_core.messages import HumanMessage, AIMessage
-
+import ast
 
 from dotenv import load_dotenv
 api_key=os.environ.get("OPENAPI_API_KEY")
@@ -233,7 +233,7 @@ async def agent(user_input):
     for value in event.values():
         print("Output state messages:", value["messages"][-1].content)
         value = value["messages"][-1].content
-  articles:any = json.loads(value)
+  articles:any = ast.literal_eval(value)
 
 # Step 2: Extract title and content for each item
   structured = []
