@@ -17,10 +17,9 @@ from langchain_core.messages import HumanMessage, AIMessage
 
 
 from dotenv import load_dotenv
-api_key=os.environ.get("OPENAI_API_KEY")
+api_key=os.environ.get("OPENAPI_API_KEY")
 rapid_key = os.environ.get("RAPIDAPI_KEY")
 
-print("OPEN API",api_key);
 os.environ["OPENAI_API_KEY"] = api_key
 os.environ["RAPIDAPI_KEY"] = rapid_key
 
