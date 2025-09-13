@@ -16,7 +16,7 @@ from langgraph.prebuilt import ToolNode, tools_condition,InjectedState
 from langchain_core.messages import HumanMessage, AIMessage
 
 
-
+from dotenv import load_dotenv
 api_key=os.environ.get("OPENAI_API_KEY")
 rapid_key = os.environ.get("RAPIDAPI_KEY")
 
