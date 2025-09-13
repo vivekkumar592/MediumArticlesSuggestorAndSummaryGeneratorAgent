@@ -182,6 +182,7 @@ def llm_node_to_summarize_articles_content_Node(state: State):
       
       text
       {{
+        "title": "...",
         "introduction": "...", 
         "bodyHighlights": "...", 
         "conclusion": "...",
@@ -251,14 +252,15 @@ async def agent(user_input):
   structured = []
   for i, article in enumerate(articles, start=1):
       # Split by custom `$$` separator
-      parts = re.split(r'\s*\$\$\s*', article, maxsplit=1)
-      title = parts[0].strip()
-      content = parts[1].strip() if len(parts) > 1 else ""
+      
       
       structured.append({
           "id": i,
-          "title": title,
-          "content": content
+          "title": article.get("title", "No title"),
+          "introduction": article.get("introduction", "No introduction"),
+          "bodyHighlights": article.get("bodyHighlights", "No bodyHighlights"),
+          "conclusion": article.get("conclusion","No Conclusion"),
+          "url":article.get("url","No url")
       })
   return structured
 
