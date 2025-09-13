@@ -177,15 +177,15 @@ def llm_node_to_summarize_articles_content_Node(state: State):
 
   user_message = state["messages"][-1].content if state["messages"] else ""
   system_template = '''You are a precise summarization expert. Your task is to take a list of article contents provided as input (e.g., [article1content, article2content, ...]) and generate a concise summary for each one.
-                       Each summary should  capture the main ideas, key points, and conclusions without adding external information or opinions. 
+                       Each summary should  capture the main ideas, key points, and conclusions without adding external information or opinions.Do keep the technical accuracy intact.
                        Maintain objectivity and structure each summary with a brief introduction, body highlights, and conclusion.
 
                       Input format:
 
                       articles: {articlesContents}
 
-                      Output strictly as a JSON array of strings, where each element is the summary of the corresponding input article, in the same order. No additional text, explanations, or keys—just the array:
-                      ["summary1", "summary2", ...]
+                      Output strictly as a JSON array of strings, where each element is like this title $$ summary of the corresponding input article, in the same order. No additional text, explanations, or keys—just the array :
+                      ["title $$ summary1", "title $$ summary2", ...]
 
                       If the list has fewer or more items, match the output list length accordingly. If an article is empty or invalid, output "No content to summarize" for that entry.
                       In the starting add that how many articles you summarized in this.'''
@@ -233,7 +233,22 @@ async def agent(user_input):
     for value in event.values():
         print("Output state messages:", value["messages"][-1].content)
         value = value["messages"][-1].content
-  return value
+  articles:any = json.loads(value)
+
+# Step 2: Extract title and content for each item
+  structured = []
+  for i, article in enumerate(articles, start=1):
+      # Split by custom `$$` separator
+      parts = re.split(r'\s*\$\$\s*', article, maxsplit=1)
+      title = parts[0].strip()
+      content = parts[1].strip() if len(parts) > 1 else ""
+      
+      structured.append({
+          "id": i,
+          "title": title,
+          "content": content
+      })
+  return structured
 
 
 
