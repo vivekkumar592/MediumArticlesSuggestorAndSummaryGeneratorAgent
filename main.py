@@ -1,7 +1,28 @@
 from fastapi import FastAPI
 from agent import agent
-app = FastAPI()
+
 import logging
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+origins = [
+    "http://localhost:3000",   # Frontend local dev URL
+    "https://your-frontend-domain.com",  # Production frontend URL
+    "*",  # Use "*" to allow all origins but not recommended for production
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # Or ["*"] to allow all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
+
+
+
+
 
 logger = logging.getLogger("uvicorn.error")
   # stream_graph_updates(user_input)
