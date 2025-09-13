@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 
 origins = [
-    "http://localhost:3000",   # Frontend local dev URL
+    "http://localhost:5500",   # Frontend local dev URL
     "https://your-frontend-domain.com",  # Production frontend URL
     "*",  # Use "*" to allow all origins but not recommended for production
 ]
