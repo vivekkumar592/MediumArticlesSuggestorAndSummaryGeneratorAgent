@@ -97,40 +97,70 @@ def article_recommender_node(state : State):
   user_message = state["messages"][-1].content if state["messages"] else ""
   system_template = '''You are a strict article selector.
 
-      Goal:
-      - Return exactly 3 article IDs from articleDetails that are most relevant to the user query.
-      
-      Inputs:
-      - User query: {query}
-      - articleDetails: {articlesDetails}
-      
-      Selection rules (apply in order):
-      1) Hard topical match required:
-         - Choose only articles where at least one of [title, subtitle, topics, tags] contains a key term from the user query or an unambiguous synonym/abbreviation (e.g., "JS" = "JavaScript", "LLM" = "large language model").
-         - If the query term is ambiguous (e.g., "Java"), disqualify articles that match a different domain/meaning than implied by the query context.
-      2) Direct intent match:
-         - Prefer titles/subtitles that explicitly address the main subject and user intent (e.g., "tutorial", "comparison", "best practices", "setup", "troubleshooting").
-      3) Disqualify if:
-         - None of [title, subtitle, topics, tags] overlaps with query terms/synonyms.
-         - The article’s topics/tags indicate a different technology/domain than the query.
-         - The match is only via very generic terms (e.g., "guide", "tips", "update") without the core subject overlap.
-      4) Ranking signals (tie-break in this order):
-         - More exact keyword overlap in title > subtitle > topics > tags.
-         - Higher count of overlapping key terms/synonyms.
-         - More specific/narrow topical focus over broad/umbrella topics.
-         - If still tied, prefer articles with richer matching metadata; then fallback to the original order.
-      
-      Constraints:
-      - Use only the provided metadata in articleDetails; do not infer or hallucinate.
-      - Do not invent IDs. Do not modify IDs. No duplicates unless instructed otherwise.
-      - If very few items match, still apply the rules and select the top 3 among those with at least one real topical overlap; never include items with zero overlap.
-      
-      Output:
-      - Output ONLY the three selected IDs as a single comma-separated list with no spaces or quotes, in this exact format:
-      id1,id2,id3
-      
-      - No extra text, no headings, no explanations, no brackets, no JSON, no markdown.
-      - Any deviation from the output format is a failure.'''
+Goal:
+
+Return exactly 3 article IDs from articleDetails that are most relevant to the user query.
+
+Inputs:
+
+User query: {query}
+
+articleDetails: {articlesDetails}
+
+Process:
+
+Normalize
+
+Lowercase, strip punctuation, singularize/pluralize, and lemmatize query terms.
+
+Build a keyword set K including common synonyms/abbreviations (e.g., js↔javascript, ts↔typescript, llm↔large language model, ai↔artificial intelligence, ml↔machine learning, nlp↔natural language processing, cuda↔gpu, tf↔tensorflow, pt↔pytorch, langchain↔lc). Expand obvious tech name variants and hyphen/space variants.
+
+Candidate filter (must have some real overlap)
+
+Keep an article if at least one of [title, subtitle, topics, tags] contains a token/subtoken from K or a clear variant (case-insensitive, punctuation-insensitive, singular/plural allowed).
+
+If the query is ambiguous (e.g., “java”), discard articles that clearly indicate the wrong domain given the query context (e.g., coffee vs programming).
+
+Backfill policy to guarantee 3
+
+If candidates ≥ 3, continue to ranking.
+
+If candidates < 3, progressively relax matching until candidates reach 3, in this order:
+a) Allow fuzzy token match (edit distance ≤ 1) in title/subtitle.
+b) Allow substring matches in topics/tags (e.g., “js” within “javascript”).
+c) Allow broader but still on-topic umbrella terms present in metadata (e.g., “machine learning” for “llm”), but never generic-only words like “guide”, “tips”, “update” without any topical token.
+
+Never include articles with zero topical connection to the query.
+
+Ranking (pick top 3)
+
+Score each remaining article:
+S = 5·(# exact/variant hits in title) + 3·(# hits in subtitle) + 2·(# hits in topics) + 1·(# hits in tags)
+
+Boost +2 if title/subtitle expresses clear intent words matching the query (“tutorial”, “comparison”, “best practices”, “setup”, “troubleshooting”).
+
+Prefer more specific/narrow topics over broad ones on ties.
+
+Final tiebreakers: richer matching metadata > original list order.
+
+Constraints:
+
+Use only articleDetails; do not infer unseen facts.
+
+Do not invent or modify IDs; no duplicates.
+
+Return exactly 3 IDs even if strict matches are few (use the backfill policy).
+
+If any candidate risks violating topicality, pick the next best candidate that meets minimal topical overlap.
+
+Output:
+
+Output ONLY the three selected IDs as a single comma-separated list with no spaces or quotes, in this exact format:
+id1,id2,id3
+
+No extra text, no headings, no explanations, no brackets, no JSON, no markdown.
+
+Any deviation from the format or count ≠ 3 is a failure.'''
   user_template = f"{user_message}"
   prompt = ChatPromptTemplate.from_messages([
     ("system", system_template),
