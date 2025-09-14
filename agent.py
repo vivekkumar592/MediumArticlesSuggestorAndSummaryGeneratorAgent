@@ -225,32 +225,68 @@ def llm_node_to_summarize_articles_content_Node(state: State):
   ''' In this node the llm takes the articles content and return the proper summary along witht the main points of the articles.'''
 
   user_message = state["messages"][-1].content if state["messages"] else ""
-  system_template = '''You are a precise summarization expert. Your task is to take a list of article contents provided as input (e.g., ["article1content", "article2content", ...]) and generate a structured summary for each article.
+  system_template = '''You are a content‑preserving summarization expert.
 
-      Each summary must capture the main ideas, key points, and conclusions without adding external information or opinions. Keep technical accuracy intact, maintain objectivity, and provide the summary in the following JSON object format:
-      
-      text
-      {{
+        Goal:
+        
+        For each input article, produce a compressed summary that preserves all core concepts, definitions, steps, metrics, examples, caveats, and conclusions so the reader gains the same knowledge as the full text.
+        
+        Style:
+        
+        Write in direct, neutral statements; do not say “the article/paper states,” do not mention authors, and avoid third‑person/meta commentary.
+        
+        Keep technical accuracy; retain terminology, acronyms (define on first use), numbers, thresholds, equations, API names, function/class names, and configuration flags.
+        
+        Output format (strict JSON):
+        
+        Output a JSON array only.
+        
+        First element must be: {{"summaryCount": 3}}
+        
+        Then exactly three objects in input order, each shaped as:
+        {{
         "title": "...",
-        "introduction": "...", 
-        "bodyHighlights": "...", 
+        "introduction": "...",
+        "bodyHighlights": "...",
         "conclusion": "...",
-        "url": "..." 
-      }}
-      Input format:
-      articles: {articlesContents}
-      
-      Output requirements:
-      
-      Output strictly a JSON array of such objects, one per article, in the same order.
-      
-      If an article is empty or invalid, output an object with all fields as "No content to summarize" and "url" as an empty string.
-      
-      Include a first array element exactly as:
-       "summaryCount": N 
-      where N is the number of articles summarized.
-      You must always return 3 summary.Anything less means failure
-      The entire output must be valid JSON, parsable by json.loads() with no extra text, explanation, or formatting outside this array.'''
+        "url": "..."
+        }}
+        
+        Section guidance:
+        
+        title: concise (≤12 words), use the text’s own title when obvious; otherwise synthesize from its main topic.
+        
+        introduction: 1–2 sentences stating scope, purpose, and context.
+        
+        bodyHighlights: 5–10 bullet points in a single string, each starting with "- " and separated by "\n", covering methods/approach, key ideas, important definitions, algorithms/steps, parameters/configs, quantitative results, examples, limitations, and best practices.
+        
+        conclusion: 1–2 sentences with key takeaways and implications.
+        
+        url: pass through the provided URL if present; otherwise "".
+        
+        Input:
+        articles: {articlesContents}
+        
+        Processing rules:
+        
+        If articlesContents has ≥3 items, summarize the first three in order and ignore the rest.
+        
+        If fewer than 3 items, output summaries for those provided and pad the remaining slots with:
+        {
+        "title": "No content to summarize",
+        "introduction": "No content to summarize",
+        "bodyHighlights": "No content to summarize",
+        "conclusion": "No content to summarize",
+        "url": ""
+        }
+        
+        If any item is empty/invalid, use the same “No content to summarize” object in that position.
+        
+        Do not add external information or opinions. No quotations unless present in the text.
+        
+        The entire output must be valid JSON, parseable by json.loads(), with no extra text before or after the array.
+        
+        You must always return exactly 3 summary objects (plus the leading {{"summaryCount": 3}}). Any other count is a failure.'''
   user_template = f"{user_message}"
   prompt = ChatPromptTemplate.from_messages([
     ("system", system_template),
