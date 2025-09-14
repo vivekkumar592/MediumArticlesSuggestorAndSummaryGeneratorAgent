@@ -26,10 +26,10 @@ async def log_requests(request: Request, call_next):
 async def read_initial():
     return {"agent_content": "Hello User"}
 
-@app.get("/recommend/{user_input}")
-async def read_user_input(user_input: str):
-    agent_content = await agent(user_input)
-    logger.info(f"recommend path hit by user request: {user_input}")
+@app.get("/recommend")
+async def recommend(q: str = Query(..., min_length=1, description="Search text")):
+    agent_content = await agent(q)
+    logger.info(f"recommend query hit: {q}")
     return {"agent_content": agent_content}
 
 # Optional: explicit OPTIONS for debug
