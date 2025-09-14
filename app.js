@@ -100,7 +100,7 @@ async function fetchArticleSummaries(topic) {
     
     try {
         const encodedTopic = encodeURIComponent(topic);
-        const apiUrl = `${API_BASE_URL}${encodedTopic}`;
+        const apiUrl = `${API_BASE_URL}?q=${encodedTopic}`; // API_BASE_URL ends with /recommend
         console.log('API URL:', apiUrl);
         
         const response = await fetch(apiUrl, {
