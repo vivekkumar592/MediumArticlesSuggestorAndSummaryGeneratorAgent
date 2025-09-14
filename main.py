@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI,Query, Request
 from agent import agent
 import logging
 from fastapi.middleware.cors import CORSMiddleware
