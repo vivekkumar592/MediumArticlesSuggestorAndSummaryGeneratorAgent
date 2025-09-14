@@ -95,23 +95,42 @@ def article_recommender_node(state : State):
   ''' In this node the llm takes the articles details and try to find the 3 most suitable articles to show to the user from articleDetails.'''
 
   user_message = state["messages"][-1].content if state["messages"] else ""
-  system_template = '''You are a precise article recommender
-                    Your sole task is to select exactly 3 articles from the provided articleDetails array that best match the user's query based on relevance to title, subtitle, topics, tags, and other metadata.
-                    Do not summarize, explain, or add any text beyond the output format."
+  system_template = '''You are a strict article selector.
 
-                    Input:
-
-                    User query: {query}
-
-                    articleDetails: {articlesDetails}
-
-                    Output ONLY in this exact format as a JSON array, nothing else—no introductions, no explanations, no summaries, no additional fields, no markdown, no questions:
-                    
-                    example_id,another_id,third_id
-                    
-
-                    Return exact 3. Extract 'id'  without changes. Strictly adhere to this;"
-                    any deviation means failure.'''
+      Goal:
+      - Return exactly 3 article IDs from articleDetails that are most relevant to the user query.
+      
+      Inputs:
+      - User query: {query}
+      - articleDetails: {articlesDetails}
+      
+      Selection rules (apply in order):
+      1) Hard topical match required:
+         - Choose only articles where at least one of [title, subtitle, topics, tags] contains a key term from the user query or an unambiguous synonym/abbreviation (e.g., "JS" = "JavaScript", "LLM" = "large language model").
+         - If the query term is ambiguous (e.g., "Java"), disqualify articles that match a different domain/meaning than implied by the query context.
+      2) Direct intent match:
+         - Prefer titles/subtitles that explicitly address the main subject and user intent (e.g., "tutorial", "comparison", "best practices", "setup", "troubleshooting").
+      3) Disqualify if:
+         - None of [title, subtitle, topics, tags] overlaps with query terms/synonyms.
+         - The article’s topics/tags indicate a different technology/domain than the query.
+         - The match is only via very generic terms (e.g., "guide", "tips", "update") without the core subject overlap.
+      4) Ranking signals (tie-break in this order):
+         - More exact keyword overlap in title > subtitle > topics > tags.
+         - Higher count of overlapping key terms/synonyms.
+         - More specific/narrow topical focus over broad/umbrella topics.
+         - If still tied, prefer articles with richer matching metadata; then fallback to the original order.
+      
+      Constraints:
+      - Use only the provided metadata in articleDetails; do not infer or hallucinate.
+      - Do not invent IDs. Do not modify IDs. No duplicates unless instructed otherwise.
+      - If very few items match, still apply the rules and select the top 3 among those with at least one real topical overlap; never include items with zero overlap.
+      
+      Output:
+      - Output ONLY the three selected IDs as a single comma-separated list with no spaces or quotes, in this exact format:
+      id1,id2,id3
+      
+      - No extra text, no headings, no explanations, no brackets, no JSON, no markdown.
+      - Any deviation from the output format is a failure.'''
   user_template = f"{user_message}"
   prompt = ChatPromptTemplate.from_messages([
     ("system", system_template),
@@ -199,8 +218,8 @@ def llm_node_to_summarize_articles_content_Node(state: State):
       
       Include a first array element exactly as:
        "summaryCount": N 
-      where N is the number of valid (non-empty) articles summarized.
-      
+      where N is the number of articles summarized.
+      You must always return 3 summary.Anything less means failure
       The entire output must be valid JSON, parsable by json.loads() with no extra text, explanation, or formatting outside this array.'''
   user_template = f"{user_message}"
   prompt = ChatPromptTemplate.from_messages([
