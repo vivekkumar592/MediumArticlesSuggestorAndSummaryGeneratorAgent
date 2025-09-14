@@ -180,7 +180,24 @@ function createArticleCard(summary, index) {
     
     // Parse the summary content into sections
     const sections = summary;
-    
+    const bodyHighlightsHtml = sections.bodyHighlights
+  ? `
+    <div class="card-section">
+      <h3 class="section-title">Body Highlights</h3>
+      <ul class="section-content">
+        ${
+          sections.bodyHighlights
+            .split(/\r?\n/)                      // split lines; use your real delimiter if different
+            .map(l => l.trim())
+            .filter(Boolean)
+            .map(l => l.replace(/^\-\s*/, ""))   // remove leading "- " if present
+            .map(item => `<li>${escapeHtml(item)}</li>`)
+            .join("")
+        }
+      </ul>
+    </div>
+  `
+  : "";
     card.innerHTML = `
         <h4>${summary.title}</ht>
         <div class="card-content">
@@ -191,13 +208,7 @@ function createArticleCard(summary, index) {
                 </div>
             ` : ''}
             
-            ${sections.bodyHighlights ? `
-                <div class="card-section">
-                    <h3 class="section-title">Body Highlights</h3>
-                    <p class="section-content">${escapeHtml(sections.bodyHighlights).split("-").map((highlight) => 
-                                                                                                    `<p>{highlight}</p>`)}</p>
-                </div>
-            ` : ''}
+            ${bodyHighlightsHtml}
             
             ${sections.conclusion ? `
                 <div class="card-section">
