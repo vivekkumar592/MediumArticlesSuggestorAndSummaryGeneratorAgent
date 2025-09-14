@@ -241,7 +241,7 @@ def llm_node_to_summarize_articles_content_Node(state: State):
         
         Output a JSON array only.
         
-        First element must be: {{"summaryCount": 3}}
+        First element must be: {{"summaryCount"}}: 3
         
         Then exactly three objects in input order, each shaped as:
         {{
@@ -272,13 +272,13 @@ def llm_node_to_summarize_articles_content_Node(state: State):
         If articlesContents has ≥3 items, summarize the first three in order and ignore the rest.
         
         If fewer than 3 items, output summaries for those provided and pad the remaining slots with:
-        {
+        {{
         "title": "No content to summarize",
         "introduction": "No content to summarize",
         "bodyHighlights": "No content to summarize",
         "conclusion": "No content to summarize",
         "url": ""
-        }
+        }}
         
         If any item is empty/invalid, use the same “No content to summarize” object in that position.
         
