@@ -195,8 +195,7 @@ function createArticleCard(summary, index) {
                 <div class="card-section">
                     <h3 class="section-title">Body Highlights</h3>
                     <p class="section-content">${escapeHtml(sections.bodyHighlights).split("-").map((highlight) => 
-                                                                                                    `<ul>
-                                                                                                     <li>${highlight}</li></ul>`)}</p>
+                                                                                                    `<p>{highlight}</p>`)}</p>
                 </div>
             ` : ''}
             
