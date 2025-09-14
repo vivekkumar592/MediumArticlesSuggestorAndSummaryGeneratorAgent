@@ -9,7 +9,7 @@ const btnText = findButton.querySelector('.btn-text');
 const btnLoader = findButton.querySelector('.btn-loader');
 
 // API Configuration
-const API_BASE_URL = 'https://n6pj8blr56.execute-api.eu-north-1.amazonaws.com/recommend/';
+const API_BASE_URL = 'https://n6pj8blr56.execute-api.eu-north-1.amazonaws.com/recommend';
 
 // State Management
 let isLoading = false;
